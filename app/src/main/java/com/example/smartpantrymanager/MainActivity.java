@@ -1,24 +1,62 @@
 package com.example.smartpantrymanager;
 
 import android.os.Bundle;
+import android.view.View;
+import android.widget.TextView;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.smartpantrymanager.adapter.PantryAdapter;
+import com.example.smartpantrymanager.db.DatabaseHelper;
+import com.example.smartpantrymanager.model.PantryItem;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+    private DatabaseHelper dbHelper;
+    private RecyclerView rvPantry;
+    private TextView tvEmptyState;
+    private PantryAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+
+        dbHelper = new DatabaseHelper(this);
+        rvPantry = findViewById(R.id.rvPantry);
+        tvEmptyState = findViewById(R.id.tvEmptyState);
+
+        rvPantry.setLayoutManager(new LinearLayoutManager(this));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadPantryItems();
+    }
+
+    private void loadPantryItems() {
+        List<PantryItem> items = dbHelper.getAllPantryItems();
+
+        if (items.isEmpty()) {
+            rvPantry.setVisibility(View.GONE);
+            tvEmptyState.setVisibility(View.VISIBLE);
+        } else {
+            rvPantry.setVisibility(View.VISIBLE);
+            tvEmptyState.setVisibility(View.GONE);
+
+            if (adapter == null) {
+                adapter = new PantryAdapter(items, item -> {
+
+                });
+                rvPantry.setAdapter(adapter);
+            } else {
+                adapter.updateItems(items);
+            }
+        }
     }
 }

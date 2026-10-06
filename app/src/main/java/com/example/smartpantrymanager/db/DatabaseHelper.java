@@ -4,6 +4,10 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.content.ContentValues;
+import android.database.Cursor;
+import java.util.ArrayList;
+import java.util.List;
+import com.example.smartpantrymanager.model.PantryItem;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -268,19 +272,64 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 });
     }
 
-    private void insertRecipe(SQLiteDatabase db, String name, String steps, Object[][] ingredients) {
-        ContentValues recipeValues = new ContentValues();
-        recipeValues.put(COL_RECIPE_NAME, name);
+    private void insertRecipe(SQLiteDatabase db, String name, String steps, Object[][] ingredients) { //taking database, recipe name, instructions and ingredients
+        ContentValues recipeValues = new ContentValues(); //container for recipe
+        recipeValues.put(COL_RECIPE_NAME, name); //place in columns they belong
         recipeValues.put(COL_RECIPE_STEPS, steps);
-        long recipeId = db.insert(TABLE_RECIPES, null, recipeValues);
+        long recipeId = db.insert(TABLE_RECIPES, null, recipeValues); //adds recipe names and steps into recipe table and returns id
 
-        for (Object[] ingredient : ingredients) {
+        for (Object[] ingredient : ingredients) { //for loop to gather ingredients of recipe and store them by the same ID as the recipe name
             ContentValues ingredientValues = new ContentValues();
-            ingredientValues.put(COL_RI_RECIPE_ID, recipeId);
-            ingredientValues.put(COL_RI_NAME, (String) ingredient[0]);
-            ingredientValues.put(COL_RI_QUANTITY, (Double) ingredient[1]);
-            ingredientValues.put(COL_RI_UNIT, (String) ingredient[2]); // can be null
-            db.insert(TABLE_RECIPE_INGREDIENTS, null, ingredientValues);
+            ingredientValues.put(COL_RI_RECIPE_ID, recipeId); //stores recipe id
+            ingredientValues.put(COL_RI_NAME, (String) ingredient[0]); //stores name ex Flour
+            ingredientValues.put(COL_RI_QUANTITY, (Double) ingredient[1]); //stores quantity ex 2
+            ingredientValues.put(COL_RI_UNIT, (String) ingredient[2]);//stores measure ex cup
+            db.insert(TABLE_RECIPE_INGREDIENTS, null, ingredientValues); //Insert ingredients in table
         }
+    }
+    public long insertPantryItem(PantryItem item) { //insert pantry item set class structure with functions
+        SQLiteDatabase db = getWritableDatabase(); //connect to db
+        ContentValues values = new ContentValues();
+        values.put(COL_PANTRY_NAME, item.getName()); //get values from class set functions
+        values.put(COL_PANTRY_QUANTITY, item.getQuantity());
+        values.put(COL_PANTRY_UNIT, item.getUnit());
+        values.put(COL_PANTRY_EXPIRY, item.getExpiryDate());
+        return db.insert(TABLE_PANTRY, null, values); //insert into table
+    }
+
+    public List<PantryItem> getAllPantryItems() {//returns list of items
+        List<PantryItem> items = new ArrayList<>(); //create empty list to store values
+        SQLiteDatabase db = getReadableDatabase();//set db connection
+        Cursor cursor = db.query(TABLE_PANTRY, null, null, null, null, null,
+                COL_PANTRY_NAME + " ASC"); //go to pantry and get table rows and order by col name in ascending order
+
+        if (cursor.moveToFirst()) { //cursor is like iterator in for loop and set to move to first row
+            do {
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(COL_PANTRY_ID));//gets index of specified info
+                String name = cursor.getString(cursor.getColumnIndexOrThrow(COL_PANTRY_NAME));
+                double quantity = cursor.getDouble(cursor.getColumnIndexOrThrow(COL_PANTRY_QUANTITY));
+                String unit = cursor.getString(cursor.getColumnIndexOrThrow(COL_PANTRY_UNIT));
+                String expiry = cursor.getString(cursor.getColumnIndexOrThrow(COL_PANTRY_EXPIRY));
+                items.add(new PantryItem(id, name, quantity, unit, expiry)); //stores info in list
+            } while (cursor.moveToNext());//moves to next row
+        }
+        cursor.close();
+        return items;
+    }
+
+    public int updatePantryItem(PantryItem item) { //same as insert except it gets items not put
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COL_PANTRY_NAME, item.getName());
+        values.put(COL_PANTRY_QUANTITY, item.getQuantity());
+        values.put(COL_PANTRY_UNIT, item.getUnit());
+        values.put(COL_PANTRY_EXPIRY, item.getExpiryDate());
+        return db.update(TABLE_PANTRY, values, COL_PANTRY_ID + " = ?",
+                new String[]{String.valueOf(item.getId())});
+    }
+
+    public void deletePantryItem(int id) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.delete(TABLE_PANTRY, COL_PANTRY_ID + " = ?", new String[]{String.valueOf(id)}); //deletes item by id
     }
 }
