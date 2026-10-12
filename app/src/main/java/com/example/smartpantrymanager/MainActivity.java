@@ -1,5 +1,6 @@
 package com.example.smartpantrymanager;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -29,6 +30,10 @@ public class MainActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         rvPantry = findViewById(R.id.rvPantry);
         tvEmptyState = findViewById(R.id.tvEmptyState);
+        findViewById(R.id.fabAdd).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
+            startActivity(intent);
+        });
 
         rvPantry.setLayoutManager(new LinearLayoutManager(this));
     }
@@ -51,7 +56,13 @@ public class MainActivity extends AppCompatActivity {
 
             if (adapter == null) {
                 adapter = new PantryAdapter(items, item -> {
-
+                    Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
+                    intent.putExtra(AddEditActivity.EXTRA_ITEM_ID, item.getId());
+                    intent.putExtra(AddEditActivity.EXTRA_ITEM_NAME, item.getName());
+                    intent.putExtra(AddEditActivity.EXTRA_ITEM_QUANTITY, item.getQuantity());
+                    intent.putExtra(AddEditActivity.EXTRA_ITEM_UNIT, item.getUnit());
+                    intent.putExtra(AddEditActivity.EXTRA_ITEM_EXPIRY, item.getExpiryDate());
+                    startActivity(intent);
                 });
                 rvPantry.setAdapter(adapter);
             } else {
