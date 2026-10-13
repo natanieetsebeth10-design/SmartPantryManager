@@ -4,8 +4,12 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -36,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         rvPantry.setLayoutManager(new LinearLayoutManager(this));
+        setupSwipeToDelete();
     }
 
     @Override
@@ -69,5 +74,40 @@ public class MainActivity extends AppCompatActivity {
                 adapter.updateItems(items);
             }
         }
+    }
+    private void setupSwipeToDelete() {
+        ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(
+                0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+        //enabling swiping left and right nu not drag and drop
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                  @NonNull RecyclerView.ViewHolder viewHolder,
+                                  @NonNull RecyclerView.ViewHolder target) {
+                return false; // because we aren't supporting drag-to-reorder just swipe-to-delete
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getBindingAdapterPosition();//viewHolder is to get row
+                PantryItem item = adapter.getItemAt(position); //gets item by its row id
+
+                new AlertDialog.Builder(MainActivity.this) //confirmation dialogue
+                        .setTitle("Delete ingredient")
+                        .setMessage("Remove " + item.getName() + " from your pantry?")
+                        .setPositiveButton("Delete", (dialog, which) -> {
+                            dbHelper.deletePantryItem(item.getId());//delete it
+                            loadPantryItems();//reload updated info
+                            Toast.makeText(MainActivity.this,
+                                    "Ingredient deleted", Toast.LENGTH_SHORT).show(); //alert it was successfull
+                        })
+                        .setNegativeButton("Cancel", (dialog, which) ->
+                                adapter.notifyItemChanged(position)) // restores instead odf deleting ingredient
+                        .setOnCancelListener(dialog ->
+                                adapter.notifyItemChanged(position)) // same thing happens if tapping outside the toast message
+                        .show();
+            }
+        };
+
+        new ItemTouchHelper(callback).attachToRecyclerView(rvPantry);//Activates swipe handling on the RecyclerView.
     }
 }

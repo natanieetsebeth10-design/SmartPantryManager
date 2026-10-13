@@ -15,6 +15,7 @@ import com.example.smartpantrymanager.model.PantryItem;
 import java.util.List;
 
 
+
 // adapter connects the PantryItem data to the RecyclerView
 public class PantryAdapter
         extends RecyclerView.Adapter<PantryAdapter.PantryViewHolder> {
@@ -51,6 +52,9 @@ public class PantryAdapter
 
         // tells RecyclerView that the data has been changed/modified
         notifyDataSetChanged();
+    }
+    public PantryItem getItemAt(int position) {
+        return pantryItems.get(position);
     }
 
 
