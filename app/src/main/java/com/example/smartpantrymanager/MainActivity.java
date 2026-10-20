@@ -38,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
             startActivity(intent);
         });
+        findViewById(R.id.btnSuggested).setOnClickListener(v ->
+                startActivity(new Intent(MainActivity.this, SuggestedRecipesActivity.class)));
 
         rvPantry.setLayoutManager(new LinearLayoutManager(this));
         setupSwipeToDelete();

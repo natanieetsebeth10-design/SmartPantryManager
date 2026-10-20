@@ -16,6 +16,13 @@
             android:textSize="22sp"
             android:textStyle="bold"
             android:padding="16dp" />
+        <Button
+            android:id="@+id/btnSuggested"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View suggested recipes"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvPantry"
