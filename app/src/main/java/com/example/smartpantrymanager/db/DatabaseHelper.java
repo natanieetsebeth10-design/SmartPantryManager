@@ -1,5 +1,6 @@
 package com.example.smartpantrymanager.db;
-
+import com.example.smartpantrymanager.model.Recipe;
+import com.example.smartpantrymanager.model.RecipeIngredient;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -315,6 +316,56 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         cursor.close();
         return items;
+    }
+    public Recipe getRecipeById(int recipeId) {
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.query(TABLE_RECIPES, null, COL_RECIPE_ID + " = ?",
+                new String[]{String.valueOf(recipeId)}, null, null, null);
+
+        Recipe recipe = null;
+        if (cursor.moveToFirst()) {
+            String name = cursor.getString(cursor.getColumnIndexOrThrow(COL_RECIPE_NAME));
+            String steps = cursor.getString(cursor.getColumnIndexOrThrow(COL_RECIPE_STEPS));
+            recipe = new Recipe(recipeId, name, steps);
+            recipe.setIngredients(getIngredientsForRecipe(db, recipeId));
+        }
+        cursor.close();
+        return recipe;
+    }
+    public List<Recipe> getAllRecipesWithIngredients() {
+        List<Recipe> recipes = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.query(TABLE_RECIPES, null, null, null, null, null,
+                COL_RECIPE_NAME + " ASC");
+
+        while (cursor.moveToNext()) {
+            int id = cursor.getInt(cursor.getColumnIndexOrThrow(COL_RECIPE_ID));
+            String name = cursor.getString(cursor.getColumnIndexOrThrow(COL_RECIPE_NAME));
+            String steps = cursor.getString(cursor.getColumnIndexOrThrow(COL_RECIPE_STEPS));
+
+            Recipe recipe = new Recipe(id, name, steps);
+            recipe.setIngredients(getIngredientsForRecipe(db, id));
+            recipes.add(recipe);
+        }
+        cursor.close();
+        return recipes;
+    }
+
+    private List<RecipeIngredient> getIngredientsForRecipe(SQLiteDatabase db, int recipeId) {
+        List<RecipeIngredient> ingredients = new ArrayList<>();
+        Cursor cursor = db.query(TABLE_RECIPE_INGREDIENTS, null,
+                COL_RI_RECIPE_ID + " = ?", new String[]{String.valueOf(recipeId)},
+                null, null, null);
+
+        while (cursor.moveToNext()) {
+            int id = cursor.getInt(cursor.getColumnIndexOrThrow(COL_RI_ID));
+            String name = cursor.getString(cursor.getColumnIndexOrThrow(COL_RI_NAME));
+            double qty = cursor.getDouble(cursor.getColumnIndexOrThrow(COL_RI_QUANTITY));
+            String unit = cursor.getString(cursor.getColumnIndexOrThrow(COL_RI_UNIT));
+            ingredients.add(new RecipeIngredient(id, recipeId, name, qty, unit));
+        }
+        cursor.close();
+        return ingredients;
     }
 
     public int updatePantryItem(PantryItem item) { //same as insert except it gets items not put
