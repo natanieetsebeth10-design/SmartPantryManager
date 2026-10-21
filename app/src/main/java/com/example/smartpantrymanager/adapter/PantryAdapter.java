@@ -13,6 +13,14 @@ import com.example.smartpantrymanager.R;
 import com.example.smartpantrymanager.model.PantryItem;
 
 import java.util.List;
+import android.content.Context;
+import android.graphics.Color;
+import com.example.smartpantrymanager.SettingsActivity;
+import com.example.smartpantrymanager.util.FormatUtils;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 
 
@@ -76,35 +84,43 @@ public class PantryAdapter
 
     // Puts the data into the ViewHolder for a specific position
     @Override
-    public void onBindViewHolder(
-            @NonNull PantryViewHolder holder,
-            int position) {
-
+    public void onBindViewHolder(@NonNull PantryViewHolder holder, int position) {
         PantryItem item = pantryItems.get(position);
-
         holder.tvItemName.setText(item.getName());
 
-        String unit = item.getUnit() != null // get the unit, if unit is null we use an empty String instead
-                ? item.getUnit()
-                : "";
-
-        String details = item.getQuantity() + " " + unit; //adds unit to quantity
-
-        if (item.getExpiryDate() != null //validate expiry date
-                && !item.getExpiryDate().isEmpty()) {
-
+        String unit = item.getUnit() != null ? item.getUnit() : "";
+        String details = FormatUtils.formatQuantity(item.getQuantity()) + " " + unit;
+        if (item.getExpiryDate() != null && !item.getExpiryDate().isEmpty()) {
             details += " • expires " + item.getExpiryDate();
         }
 
+        boolean highlightEnabled = holder.itemView.getContext()
+                .getSharedPreferences(SettingsActivity.PREFS_NAME, Context.MODE_PRIVATE)
+                .getBoolean(SettingsActivity.KEY_EXPIRY_HIGHLIGHT, true);
 
-        // display all details in textview
-        holder.tvItemDetails.setText(details);
+        if (highlightEnabled && isExpiringSoon(item.getExpiryDate())) {
+            details += " (expiring soon)";
+            holder.tvItemDetails.setTextColor(Color.parseColor("#C62828"));
+        } else {
+            holder.tvItemDetails.setTextColor(Color.parseColor("#666666")); // reset: rows get recycled
+        }
 
+        holder.tvItemDetails.setText(details.trim());
+        holder.itemView.setOnClickListener(v -> listener.onItemClick(item));
+    }
 
-        // When the item is clicked, call the listener and pass the selected PantryItem
-        holder.itemView.setOnClickListener(
-                v -> listener.onItemClick(item)
-        );
+    private boolean isExpiringSoon(String expiry) {
+        if (expiry == null || expiry.isEmpty()) return false;
+        try {
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            format.setLenient(false);
+            Date date = format.parse(expiry);
+            if (date == null) return false;
+            long threeDaysMs = 3L * 24 * 60 * 60 * 1000;
+            return date.getTime() < System.currentTimeMillis() + threeDaysMs;
+        } catch (ParseException e) {
+            return false; // unparseable date: just don't highlight
+        }
     }
 
     @Override

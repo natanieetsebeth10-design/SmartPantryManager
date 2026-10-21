@@ -15,6 +15,7 @@ import com.example.smartpantrymanager.db.DatabaseHelper;
 import com.example.smartpantrymanager.logic.RecipeMatcher;
 import com.example.smartpantrymanager.model.PantryItem;
 import com.example.smartpantrymanager.model.Recipe;
+import com.example.smartpantrymanager.util.NavHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,7 @@ public class SuggestedRecipesActivity extends AppCompatActivity {
             startActivity(intent);
         });
         rvRecipes.setAdapter(adapter);
+        NavHelper.setup(this, R.id.nav_recipes);
     }
 
     @Override

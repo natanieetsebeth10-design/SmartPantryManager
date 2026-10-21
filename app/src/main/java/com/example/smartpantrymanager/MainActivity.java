@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.smartpantrymanager.adapter.PantryAdapter;
 import com.example.smartpantrymanager.db.DatabaseHelper;
 import com.example.smartpantrymanager.model.PantryItem;
+import com.example.smartpantrymanager.util.NavHelper;
 
 import java.util.List;
 
@@ -38,11 +39,9 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
             startActivity(intent);
         });
-        findViewById(R.id.btnSuggested).setOnClickListener(v ->
-                startActivity(new Intent(MainActivity.this, SuggestedRecipesActivity.class)));
-
         rvPantry.setLayoutManager(new LinearLayoutManager(this));
         setupSwipeToDelete();
+        NavHelper.setup(this, R.id.nav_pantry);
     }
 
     @Override
