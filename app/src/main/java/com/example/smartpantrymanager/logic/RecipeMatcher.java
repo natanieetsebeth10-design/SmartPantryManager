@@ -7,6 +7,7 @@ import com.example.smartpantrymanager.util.IngredientNormalizer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,78 +15,78 @@ public class RecipeMatcher {
 
     private static final double EPSILON = 0.0001;
 
-    // Finds recipes that can be made using the available pantry ingredients
+    /** A recipe that is missing exactly one ingredient. */
+    public static class AlmostMatch {
+        public final Recipe recipe;
+        public final String missingIngredient;
+
+        public AlmostMatch(Recipe recipe, String missingIngredient) {
+            this.recipe = recipe;
+            this.missingIngredient = missingIngredient;
+        }
+    }
+
+    /** Strict rule: every ingredient present in at least the required quantity. */
     public static List<Recipe> findStrictMatches(List<PantryItem> pantry, List<Recipe> recipes) {
-
-        // Adds up the quantities of ingredients in the pantry
-        Map<String, Double> pantryTotals = buildPantryTotals(pantry);
+        Map<String, Double> totals = buildPantryTotals(pantry);
         List<Recipe> matches = new ArrayList<>();
-
-        // Checks each recipe and keeps the ones with no missing ingredients
         for (Recipe recipe : recipes) {
-            if (countMissing(recipe, pantryTotals) == 0) {
+            if (findMissing(recipe, totals).isEmpty()) {
                 matches.add(recipe);
             }
         }
-
         return matches;
     }
 
-    // Calculates the total quantity available for each pantry ingredient
+    /** Bonus list: recipes missing exactly one ingredient. Never overlaps with the strict list. */
+    public static List<AlmostMatch> findAlmostThere(List<PantryItem> pantry, List<Recipe> recipes) {
+        Map<String, Double> totals = buildPantryTotals(pantry);
+        List<AlmostMatch> result = new ArrayList<>();
+        for (Recipe recipe : recipes) {
+            List<String> missing = findMissing(recipe, totals);
+            if (missing.size() == 1) {
+                result.add(new AlmostMatch(recipe, missing.get(0)));
+            }
+        }
+        return result;
+    }
+
     private static Map<String, Double> buildPantryTotals(List<PantryItem> pantry) {
         Map<String, Double> totals = new HashMap<>();
-
         for (PantryItem item : pantry) {
-
-            // Creates a key using the ingredient name and unit type
             String key = makeKey(item.getName(), item.getUnit());
-
-            // Converts the quantity to a common unit before adding it
-            double base = IngredientNormalizer.toBaseQuantity(
-                    item.getQuantity(), item.getUnit());
-
+            double base = IngredientNormalizer.toBaseQuantity(item.getQuantity(), item.getUnit());
             Double existing = totals.get(key);
             totals.put(key, (existing == null ? 0 : existing) + base);
         }
-
         return totals;
     }
 
-    // Counts how many required ingredients are missing or have insufficient quantities
-    private static int countMissing(Recipe recipe, Map<String, Double> pantryTotals) {
-
-        // Combines repeated ingredients in the recipe before comparing quantities
-        Map<String, Double> required = new HashMap<>();
+    // Returns the display names of every ingredient that is missing or insufficient.
+    private static List<String> findMissing(Recipe recipe, Map<String, Double> pantryTotals) {
+        Map<String, Double> required = new LinkedHashMap<>();
+        Map<String, String> displayNames = new HashMap<>();
 
         for (RecipeIngredient ing : recipe.getIngredients()) {
-
-            // Creates a key so matching ingredients can be grouped together
             String key = makeKey(ing.getName(), ing.getUnit());
-
-            // Converts the required quantity to the same base unit
-            double base = IngredientNormalizer.toBaseQuantity(
-                    ing.getRequiredQuantity(), ing.getUnit());
-
+            double base = IngredientNormalizer.toBaseQuantity(ing.getRequiredQuantity(), ing.getUnit());
             Double existing = required.get(key);
             required.put(key, (existing == null ? 0 : existing) + base);
-        }
-
-        int missing = 0;
-
-        // Compares the required quantities with what is available in the pantry
-        for (Map.Entry<String, Double> entry : required.entrySet()) {
-            Double have = pantryTotals.get(entry.getKey());
-
-            // Counts an ingredient as missing if there is not enough available
-            if (have == null || have + EPSILON < entry.getValue()) {
-                missing++;
+            if (!displayNames.containsKey(key)) {
+                displayNames.put(key, ing.getName());
             }
         }
 
+        List<String> missing = new ArrayList<>();
+        for (Map.Entry<String, Double> entry : required.entrySet()) {
+            Double have = pantryTotals.get(entry.getKey());
+            if (have == null || have + EPSILON < entry.getValue()) {
+                missing.add(displayNames.get(entry.getKey()));
+            }
+        }
         return missing;
     }
 
-    // Creates a standard key so ingredients can be matched by name and unit type
     private static String makeKey(String name, String unit) {
         return IngredientNormalizer.normalizeName(name) + "|"
                 + IngredientNormalizer.getFamily(unit);

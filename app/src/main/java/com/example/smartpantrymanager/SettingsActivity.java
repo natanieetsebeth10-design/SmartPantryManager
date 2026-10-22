@@ -27,4 +27,9 @@ public class SettingsActivity extends AppCompatActivity {
 
         NavHelper.setup(this, R.id.nav_settings);
     }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        NavHelper.setup(this, R.id.nav_settings);
+    }
 }

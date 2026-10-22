@@ -2,4 +2,9 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="kitchen_red">#C62828</color>
+    <color name="kitchen_red_dark">#8E0000</color>
+    <color name="kitchen_red_light">#FFCDD2</color>
+    <color name="cream">#FFF8F0</color>
+    <color name="text_dark">#3E2723</color>
 </resources>

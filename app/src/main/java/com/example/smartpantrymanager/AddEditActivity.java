@@ -6,6 +6,12 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import android.view.View;
+import androidx.appcompat.app.AlertDialog;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -31,6 +37,11 @@ public class AddEditActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_edit);
+        setSupportActionBar(findViewById(R.id.toolbar));
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false); // the screen has its own title
+        }
 
         dbHelper = new DatabaseHelper(this);
 
@@ -52,6 +63,18 @@ public class AddEditActivity extends AppCompatActivity {
             etQuantity.setText(String.valueOf(incoming.getDoubleExtra(EXTRA_ITEM_QUANTITY, 0)));
             etUnit.setText(incoming.getStringExtra(EXTRA_ITEM_UNIT));
             etExpiry.setText(incoming.getStringExtra(EXTRA_ITEM_EXPIRY));//updates info for ingredients
+            Button btnDelete = findViewById(R.id.btnDelete);
+            btnDelete.setVisibility(View.VISIBLE);
+            btnDelete.setOnClickListener(v -> new AlertDialog.Builder(this)
+                    .setTitle("Delete ingredient")
+                    .setMessage("Remove " + etName.getText().toString().trim() + " from your pantry?")
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        dbHelper.deletePantryItem(editItemId);
+                        Toast.makeText(this, "Ingredient deleted", Toast.LENGTH_SHORT).show();
+                        finish();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show());
         }
 
         btnSave.setOnClickListener(v -> saveItem());
@@ -93,7 +116,18 @@ public class AddEditActivity extends AppCompatActivity {
         // for optional info  we replace blank strings with null
         String finalUnit = unit.isEmpty() ? null : unit;
         String finalExpiry = expiry.isEmpty() ? null : expiry;
-
+        if (!expiry.isEmpty()) {
+            SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            fmt.setLenient(false); // rejects impossible dates like 2026-13-45
+            try {
+                Date parsed = fmt.parse(expiry);
+                expiry = fmt.format(parsed); // normalises e.g. 2026-1-5 to 2026-01-05
+            } catch (ParseException e) {
+                etExpiry.setError("Use format yyyy-MM-dd (e.g. 2026-11-30)");
+                etExpiry.requestFocus();
+                return;
+            }
+        }
         if (isEditMode) {
             PantryItem updated = new PantryItem(editItemId, name, quantity, finalUnit, finalExpiry);
             dbHelper.updatePantryItem(updated);
@@ -105,5 +139,10 @@ public class AddEditActivity extends AppCompatActivity {
         }
 
         finish();
+    }
+    @Override
+    public boolean onSupportNavigateUp() {
+        finish();
+        return true;
     }
 }

@@ -12,6 +12,8 @@ import com.example.smartpantrymanager.R;
 import com.example.smartpantrymanager.model.Recipe;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeViewHolder> {
 
@@ -22,6 +24,11 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     private List<Recipe> recipes;
     private final OnRecipeClickListener listener;
 
+    private Map<Integer, String> missingByRecipeId = new HashMap<>();
+
+    public void setMissingMap(Map<Integer, String> map) {
+        this.missingByRecipeId = map;
+    }
     public RecipeAdapter(List<Recipe> recipes, OnRecipeClickListener listener) {
         this.recipes = recipes;
         this.listener = listener;
@@ -45,8 +52,13 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         Recipe recipe = recipes.get(position);
         holder.tvRecipeName.setText(recipe.getName());
 
-        int count = recipe.getIngredients() != null ? recipe.getIngredients().size() : 0;
-        holder.tvRecipeSummary.setText(count + (count == 1 ? " ingredient" : " ingredients"));
+        String missing = missingByRecipeId.get(recipe.getId());
+        if (missing != null) {
+            holder.tvRecipeSummary.setText("Missing: " + missing);
+        } else {
+            int count = recipe.getIngredients() != null ? recipe.getIngredients().size() : 0;
+            holder.tvRecipeSummary.setText(count + (count == 1 ? " ingredient" : " ingredients"));
+        }
 
         holder.itemView.setOnClickListener(v -> listener.onRecipeClick(recipe));
     }

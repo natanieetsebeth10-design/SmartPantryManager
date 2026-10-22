@@ -19,6 +19,7 @@ public class RecipeDetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recipe_detail);
+        setSupportActionBar(findViewById(R.id.toolbar));
 
         DatabaseHelper dbHelper = new DatabaseHelper(this);
         int recipeId = getIntent().getIntExtra(EXTRA_RECIPE_ID, -1);

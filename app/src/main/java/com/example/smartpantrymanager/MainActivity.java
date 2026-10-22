@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        NavHelper.setup(this, R.id.nav_pantry);
         loadPantryItems();
     }
 
